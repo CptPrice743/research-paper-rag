@@ -40,11 +40,29 @@ def search(paper_id: str, query_embedding: np.ndarray, top_k: int = 5) -> list[d
 	scores, indices = index.search(query, k)
 
 	results: list[dict] = []
+	returned_indices: list[int] = []
 	for score, chunk_idx in zip(scores[0], indices[0]):
 		if chunk_idx < 0:
 			continue
 		chunk = dict(chunks[int(chunk_idx)])
 		chunk["score"] = float(score)
 		results.append(chunk)
+		returned_indices.append(int(chunk_idx))
+
+	# Ensure chunk index 0 (title/abstract/introduction) is always included.
+	if chunks and 0 not in returned_indices:
+		intro_vector = np.empty(index.d, dtype=np.float32)
+		index.reconstruct(0, intro_vector)
+		intro_score = float(np.dot(query[0], intro_vector))
+
+		intro_chunk = dict(chunks[0])
+		intro_chunk["score"] = intro_score
+
+		if not results:
+			results.append(intro_chunk)
+		elif len(results) >= k:
+			results[-1] = intro_chunk
+		else:
+			results.append(intro_chunk)
 
 	return results

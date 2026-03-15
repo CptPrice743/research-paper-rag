@@ -18,6 +18,9 @@ def build_prompt(chunks: list[dict], question: str) -> str:
 		chunk_id = chunk.get("chunk_id", "unknown_chunk")
 		section = chunk.get("section_heading", "Section Unknown")
 		text = str(chunk.get("text", "")).strip()
+		words = text.split()
+		if len(words) > 500:
+			text = " ".join(words[:500])
 		context_blocks.append(f"[chunk_id: {chunk_id} | section: {section}]\n{text}")
 
 	context_text = "\n\n".join(context_blocks)

@@ -11,13 +11,13 @@ router = APIRouter(prefix="/upload", tags=["upload"])
 
 
 @router.post("/")
-def upload_paper(pdf: UploadFile = File(...)):
+async def upload_paper(pdf: UploadFile = File(...)):
 	if pdf.content_type != "application/pdf":
 		raise HTTPException(status_code=400, detail="Invalid file type. Please upload a PDF.")
 
 	paper_id = f"paper_{uuid4().hex[:8]}"
 
-	text = extract_text(pdf)
+	text = await extract_text(pdf)
 	chunks = chunk_text(text, paper_id)
 	embeddings = embed_texts([chunk["text"] for chunk in chunks])
 	save_paper(paper_id, chunks, embeddings)
