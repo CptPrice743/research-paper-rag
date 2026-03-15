@@ -5,19 +5,30 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.query import router as query_router
-from api.upload import router as upload_router
-
-
 def _parse_allowed_origins() -> list[str]:
     raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
     origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
     return origins or ["*"]
 
 
+def _register_routers(app: FastAPI) -> None:
+    if getattr(app.state, "routers_registered", False):
+        return
+
+    from api.query import router as query_router
+    from api.upload import router as upload_router
+
+    app.include_router(upload_router)
+    app.include_router(query_router)
+    app.state.routers_registered = True
+
+
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(app: FastAPI):
     load_dotenv()
+    _register_routers(app)
+    port = os.environ.get("PORT", "NOT SET")
+    print(f"Starting PaperPilot on PORT={port}")
     print("PaperPilot backend running")
     yield
 
@@ -33,9 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.include_router(upload_router)
-app.include_router(query_router)
 
 
 @app.get("/health")
