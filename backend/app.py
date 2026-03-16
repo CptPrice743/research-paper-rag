@@ -27,8 +27,7 @@ def _register_routers(app: FastAPI) -> None:
 async def lifespan(app: FastAPI):
     load_dotenv()
     _register_routers(app)
-    port = os.environ.get("PORT", "NOT SET")
-    print(f"Starting PaperPilot on PORT={port}")
+    print(f"Starting PaperPilot — PORT env = {os.environ.get('PORT', 'NOT SET')}")
     print("PaperPilot backend running")
     yield
 
@@ -53,5 +52,17 @@ def health():
 if __name__ == "__main__":
     import uvicorn
     import os
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app:app", host="0.0.0.0", port=port)
+
+    port_str = os.environ.get("PORT", "")
+    if port_str and port_str.strip().isdigit():
+        port = int(port_str.strip())
+    else:
+        port = 8000
+
+    print(f"PaperPilot starting on port {port}")
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=port,
+        log_level="info"
+    )
