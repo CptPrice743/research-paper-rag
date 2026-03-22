@@ -29,15 +29,15 @@ This means answers stay faithful to the paper, hallucinations are minimized, and
 ┌─────────────────────────────────────────────────────────────┐
 │                        INGEST FLOW                          │
 │                                                             │
-│  PDF Upload → PyMuPDF extraction → Chunker (800 tok, 150   │
+│  PDF Upload → PyMuPDF extraction → Chunker (800 tok, 150    │
 │  overlap) → HuggingFace API embeddings → FAISS index        │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │                        QUERY FLOW                           │
 │                                                             │
-│  Question → embed query → FAISS similarity search (top-5)  │
-│  → build prompt → Groq (Llama 3) → answer + source chunks  │
+│  Question → embed query → FAISS similarity search (top-5)   │
+│  → build prompt → Groq (Llama 3) → answer + source chunks   │
 └─────────────────────────────────────────────────────────────┘
 
 ┌──────────────┐     ┌──────────────────────────────────────┐
