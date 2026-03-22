@@ -6,16 +6,31 @@ OVERLAP_WORDS = 112
 
 
 def _extract_section_heading(chunk_text: str) -> str:
+	heading_starts = (
+		"abstract",
+		"introduction",
+		"conclusion",
+		"related work",
+		"future work",
+		"methodology",
+		"results",
+		"discussion",
+	)
+
 	for line in chunk_text.splitlines():
 		candidate = line.strip()
 		if not candidate:
 			continue
 
-		if re.match(r"^\d+(?:\.\d+)*\s+.+$", candidate):
+		if re.match(r"^(?:\d+(?:\.\d+)*\.?|[IVXLCDM]+\.)\s*", candidate):
+			return candidate
+
+		candidate_lower = candidate.lower()
+		if candidate_lower.startswith(heading_starts):
 			return candidate
 
 		letters_only = re.sub(r"[^A-Za-z]", "", candidate)
-		if letters_only and candidate == candidate.upper():
+		if letters_only and candidate == candidate.upper() and len(candidate) < 60:
 			return candidate
 
 	return "Section Unknown"

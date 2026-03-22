@@ -24,7 +24,7 @@ def save_paper(paper_id: str, chunks: list[dict], embeddings: np.ndarray) -> Non
 	}
 
 
-def search(paper_id: str, query_embedding: np.ndarray, top_k: int = 5) -> list[dict]:
+def search(paper_id: str, query_embedding: np.ndarray, top_k: int = 7) -> list[dict]:
 	paper_data = _store.get(paper_id)
 	if paper_data is None:
 		raise HTTPException(status_code=404, detail="Paper not found")
@@ -41,28 +41,60 @@ def search(paper_id: str, query_embedding: np.ndarray, top_k: int = 5) -> list[d
 
 	results: list[dict] = []
 	returned_indices: list[int] = []
+	returned_index_set: set[int] = set()
 	for score, chunk_idx in zip(scores[0], indices[0]):
 		if chunk_idx < 0:
 			continue
-		chunk = dict(chunks[int(chunk_idx)])
+		idx = int(chunk_idx)
+		chunk = dict(chunks[idx])
 		chunk["score"] = float(score)
 		results.append(chunk)
-		returned_indices.append(int(chunk_idx))
+		returned_indices.append(idx)
+		returned_index_set.add(idx)
 
-	# Ensure chunk index 0 (title/abstract/introduction) is always included.
-	if chunks and 0 not in returned_indices:
-		intro_vector = np.empty(index.d, dtype=np.float32)
-		index.reconstruct(0, intro_vector)
-		intro_score = float(np.dot(query[0], intro_vector))
+	def _append_chunk_if_missing(chunk_idx: int) -> None:
+		if chunk_idx < 0 or chunk_idx >= len(chunks) or chunk_idx in returned_index_set:
+			return
 
-		intro_chunk = dict(chunks[0])
-		intro_chunk["score"] = intro_score
+		vector = np.empty(index.d, dtype=np.float32)
+		index.reconstruct(chunk_idx, vector)
+		score = float(np.dot(query[0], vector))
 
-		if not results:
-			results.append(intro_chunk)
-		elif len(results) >= k:
-			results[-1] = intro_chunk
-		else:
-			results.append(intro_chunk)
+		chunk = dict(chunks[chunk_idx])
+		chunk["score"] = score
+		results.append(chunk)
+		returned_indices.append(chunk_idx)
+		returned_index_set.add(chunk_idx)
+
+	def _find_conclusion_anchor_idx() -> int | None:
+		keywords = (
+			"conclusion",
+			"future work",
+			"limitations",
+			"discussion",
+			"summary",
+			"we propose",
+			"in this paper we",
+		)
+
+		start_idx = max(0, len(chunks) - 8)
+		for idx in range(len(chunks) - 1, start_idx - 1, -1):
+			text = str(chunks[idx].get("text", "")).lower()
+			if any(keyword in text for keyword in keywords):
+				return idx
+
+		return None
+
+	# Ensure chunk c0 (intro/abstract) is present.
+	_append_chunk_if_missing(0)
+
+	# Add a smarter conclusion-style anchor from the trailing section when detectable.
+	conclusion_idx = _find_conclusion_anchor_idx()
+	if conclusion_idx is not None:
+		_append_chunk_if_missing(conclusion_idx)
+
+	max_results = min(len(chunks), top_k + 2)
+	if len(results) > max_results:
+		results = results[:max_results]
 
 	return results

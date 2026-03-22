@@ -36,9 +36,9 @@ def query_papers(payload: QueryRequest, request: Request):
 		)
 
 	q_embedding = embed_query(payload.question)
-	chunks = search(payload.paper_id, q_embedding, top_k=5)
-	prompt = build_prompt(chunks, payload.question)
-	result = generate_answer(prompt)
+	chunks = search(payload.paper_id, q_embedding, top_k=7)
+	messages = build_prompt(chunks, payload.question)
+	result = generate_answer(messages)
 	sources = extract_sources(chunks)
 
 	return {
