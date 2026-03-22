@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 	GROQ_MODEL: str = "llama3-8b-8192"
 	MAX_DAILY_QUERIES: int = 100
 	REDIS_URL: str = ""
+	HF_TOKEN: str = ""
 
 	model_config = SettingsConfigDict(
 		env_file=".env",
