@@ -3,6 +3,7 @@
 > Upload any research PDF and ask natural language questions — powered by local embeddings, FAISS semantic retrieval, and Llama 3 via Groq.
 
 **Live Demo:** https://research-paper-i3yzw9u3y-vyom-uchats-projects.vercel.app
+
 **Backend API:** https://research-paper-rag.onrender.com
 
 ---
