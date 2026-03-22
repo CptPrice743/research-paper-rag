@@ -12,20 +12,20 @@ function SystemNotice({ type = "info", message, subtext }) {
     : message;
 
   const styleMap = {
-    info: "border-l-4 border-l-blue-600 border-blue-100 bg-blue-50 text-blue-900",
-    warning:
-      "border-l-4 border-l-amber-500 border-amber-200 bg-amber-50 text-amber-900",
-    limit:
-      "border-l-4 border-l-amber-500 border-amber-200 bg-amber-50 text-amber-900",
+    info: "border-l-[3px] border-l-[#6366f1] text-slate-200",
+    warning: "border-l-[3px] border-l-[#f59e0b] text-slate-200",
+    limit: "border-l-[3px] border-l-[#ef4444] text-slate-200",
   };
 
   return (
     <section
-      className={`rounded-xl border p-4 shadow-sm ${styleMap[type] || styleMap.info}`}
+      className={`rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl ${styleMap[type] || styleMap.info}`}
     >
       <p className="text-sm font-semibold">{title}</p>
-      <p className="mt-1 text-sm leading-6">{body}</p>
-      {subtext ? <p className="mt-2 text-xs opacity-80">{subtext}</p> : null}
+      <p className="mt-1 text-sm leading-6 text-slate-300">{body}</p>
+      {subtext ? (
+        <p className="mt-2 text-xs text-slate-400">{subtext}</p>
+      ) : null}
     </section>
   );
 }

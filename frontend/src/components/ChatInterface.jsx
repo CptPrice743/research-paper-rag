@@ -4,7 +4,7 @@ import { queryPaper } from "../api/apiClient";
 import ChatMessage from "./ChatMessage";
 import SystemNotice from "./SystemNotice";
 
-function ChatInterface({ paperId }) {
+function ChatInterface({ paperId, onDailyCountChange }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +17,42 @@ function ChatInterface({ paperId }) {
     () => inputValue.trim().length > 0 && !isLoading,
     [inputValue, isLoading],
   );
+
+  useEffect(() => {
+    if (!paperId) {
+      setMessages([]);
+      return;
+    }
+
+    const saved = localStorage.getItem(`chat_${paperId}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const restored = Array.isArray(parsed) ? parsed : [];
+        setMessages([
+          ...restored,
+          {
+            id: crypto.randomUUID(),
+            type: "notice",
+            noticeType: "info",
+            message:
+              "Chat history restored. Note: you may need to re-upload the PDF if the server restarted.",
+          },
+        ]);
+      } catch {
+        setMessages([]);
+      }
+    } else {
+      setMessages([]);
+    }
+  }, [paperId]);
+
+  useEffect(() => {
+    if (!paperId) {
+      return;
+    }
+    localStorage.setItem(`chat_${paperId}`, JSON.stringify(messages));
+  }, [messages, paperId]);
 
   useEffect(() => {
     if (!scrollRef.current) {
@@ -36,6 +72,12 @@ function ChatInterface({ paperId }) {
   useEffect(() => {
     resizeTextarea();
   }, [inputValue]);
+
+  useEffect(() => {
+    if (typeof onDailyCountChange === "function") {
+      onDailyCountChange(dailyCount);
+    }
+  }, [dailyCount, onDailyCountChange]);
 
   const appendMessage = (message) => {
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), ...message }]);
@@ -87,16 +129,9 @@ function ChatInterface({ paperId }) {
   };
 
   return (
-    <section className="flex h-screen flex-col bg-slate-50 text-slate-800">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
-        <h1 className="text-lg font-semibold text-slate-800">PaperPilot 📄</h1>
-        <p className="text-sm text-slate-500">
-          Queries today: {dailyCount} / 100
-        </p>
-      </header>
-
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="mx-auto w-full max-w-4xl">
+    <section className="flex h-screen flex-col pt-[60px]">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="mx-auto w-full max-w-[800px]">
           {messages.length === 0 ? (
             <SystemNotice
               type="info"
@@ -130,7 +165,7 @@ function ChatInterface({ paperId }) {
 
           {isLoading ? (
             <div className="mb-4 flex justify-start">
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-[15px] text-slate-300 backdrop-blur-xl">
                 Thinking…
               </div>
             </div>
@@ -138,8 +173,8 @@ function ChatInterface({ paperId }) {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 bg-white px-4 py-4">
-        <div className="mx-auto flex w-full max-w-4xl items-end gap-3">
+      <div className="fixed inset-x-0 bottom-0 border-t border-white/10 bg-white/5 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-[800px] items-end gap-3 px-6 py-4">
           <textarea
             ref={textareaRef}
             value={inputValue}
@@ -147,13 +182,13 @@ function ChatInterface({ paperId }) {
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder="Ask about methods, results, limitations, or citations..."
-            className="max-h-[72px] min-h-[44px] flex-1 resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none ring-blue-600 placeholder:text-slate-400 focus:ring-2"
+            className="max-h-[72px] min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-[15px] leading-6 text-slate-100 outline-none placeholder:text-slate-600 focus:border-[#6366f1]"
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={!canSend}
-            className="h-11 rounded-xl bg-blue-600 px-5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             Send
           </button>

@@ -9,10 +9,7 @@ function formatFileSize(bytes) {
   if (bytes < 1024) {
     return `${bytes} B`;
   }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
 }
 
 function UploadPaper({ onUploadSuccess }) {
@@ -72,66 +69,78 @@ function UploadPaper({ onUploadSuccess }) {
   };
 
   return (
-    <section className="mx-auto w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div
-        onDragOver={(event) => {
-          event.preventDefault();
-          setIsDragOver(true);
-        }}
-        onDragLeave={() => setIsDragOver(false)}
-        onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-xl border-2 p-10 text-center transition ${
-          isDragOver
-            ? "border-solid border-blue-600 bg-blue-50"
-            : "border-dashed border-slate-300 bg-slate-50 hover:border-blue-500"
-        }`}
-      >
-        <p className="text-sm font-medium text-slate-700">
-          Drop your PDF here or click to browse
+    <section className="flex min-h-[calc(100vh-60px)] items-center justify-center px-4 pt-[60px]">
+      <div className="w-full max-w-[480px] rounded-2xl border border-white/10 bg-white/5 p-10 text-center backdrop-blur-xl">
+        <h1 className="mb-2 text-[22px] font-bold text-slate-100">Upload Research Paper</h1>
+        <p className="mb-8 text-sm text-slate-400">
+          PDF files only · Max semantic analysis in seconds
         </p>
-        <p className="mt-2 text-xs text-slate-500">
-          Supports research papers in PDF format
-        </p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={(event) => handleFilePick(event.target.files?.[0])}
-        />
+
+        <div
+          onDragOver={(event) => {
+            event.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+          className={`rounded-xl border-2 border-dashed p-10 text-center ${
+            isDragOver
+              ? "border-[#6366f1] bg-[rgba(99,102,241,0.1)]"
+              : "border-[rgba(99,102,241,0.4)] bg-[rgba(99,102,241,0.05)]"
+          }`}
+        >
+          <p className="text-5xl">📄</p>
+          <p className="mt-3 text-base font-medium text-slate-100">Drop your PDF here</p>
+          <p className="mt-1 text-sm text-slate-400">or</p>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="mt-2 bg-transparent text-sm text-indigo-400 underline"
+          >
+            Browse Files
+          </button>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(event) => handleFilePick(event.target.files?.[0])}
+          />
+        </div>
+
+        {file ? (
+          <div className="mt-4 inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100 backdrop-blur-xl">
+            📄 {file.name} · {formatFileSize(file.size)}
+          </div>
+        ) : null}
+
+        {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
+
+        {isUploading ? (
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-300">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-indigo-400" />
+            <span>Indexing paper…</span>
+          </div>
+        ) : null}
+
+        {paperId ? (
+          <div className="mt-5 flex flex-col items-center justify-center text-indigo-400">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20 text-lg font-bold">
+              ✓
+            </span>
+            <p className="mt-2 text-sm font-semibold">Ready! {chunkCount} chunks indexed</p>
+          </div>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={handleUpload}
+          disabled={!file || isUploading}
+          className="mt-6 w-full rounded-xl bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {isUploading ? "Indexing paper…" : "Upload Paper"}
+        </button>
       </div>
-
-      {file ? (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <p className="text-sm font-medium text-slate-700">{file.name}</p>
-          <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
-        </div>
-      ) : null}
-
-      {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-
-      {isUploading ? (
-        <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
-          <span>Indexing paper…</span>
-        </div>
-      ) : null}
-
-      {paperId ? (
-        <p className="mt-4 text-sm font-medium text-emerald-600">
-          ✓ Ready! {chunkCount} chunks indexed
-        </p>
-      ) : null}
-
-      <button
-        type="button"
-        onClick={handleUpload}
-        disabled={!file || isUploading}
-        className="mt-5 h-11 w-full rounded-xl bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Upload Paper
-      </button>
     </section>
   );
 }
