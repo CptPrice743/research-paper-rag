@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from services.usage_limiter import get_daily_count, get_tokens_today
+
 def _parse_allowed_origins() -> list[str]:
     raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
     origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
@@ -48,6 +50,19 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/usage")
+def get_usage():
+    total_tokens = get_tokens_today()
+    token_budget = 500000
+    return {
+        "tokens_today": total_tokens,
+        "token_budget": token_budget,
+        "token_percentage": min(100, round((total_tokens / token_budget) * 100, 1)),
+        "queries_today": get_daily_count(),
+        "resets_at": "midnight UTC",
+    }
 
 if __name__ == "__main__":
     import uvicorn

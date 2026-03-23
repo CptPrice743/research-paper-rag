@@ -24,7 +24,7 @@ def save_paper(paper_id: str, chunks: list[dict], embeddings: np.ndarray) -> Non
 	}
 
 
-def search(paper_id: str, query_embedding: np.ndarray, top_k: int = 7) -> list[dict]:
+def search(paper_id: str, query_embedding: np.ndarray, top_k: int = 5) -> list[dict]:
 	paper_data = _store.get(paper_id)
 	if paper_data is None:
 		raise HTTPException(status_code=404, detail="Paper not found")

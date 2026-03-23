@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { CheckCircle, FileText, Upload } from "lucide-react";
 
 import { uploadPaper } from "../api/apiClient";
 
@@ -14,6 +15,7 @@ function formatFileSize(bytes) {
 
 function UploadPaper({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [paperId, setPaperId] = useState(null);
@@ -36,6 +38,7 @@ function UploadPaper({ onUploadSuccess }) {
     setError("");
     setPaperId(null);
     setChunkCount(0);
+    setFileName(nextFile.name);
     setFile(nextFile);
   };
 
@@ -59,7 +62,7 @@ function UploadPaper({ onUploadSuccess }) {
       setChunkCount(result.chunk_count);
 
       setTimeout(() => {
-        onUploadSuccess(result.paper_id);
+        onUploadSuccess(result.paper_id, fileName || file.name);
       }, 1500);
     } catch (uploadError) {
       setError(uploadError.message);
@@ -70,9 +73,17 @@ function UploadPaper({ onUploadSuccess }) {
 
   return (
     <section className="flex min-h-[calc(100vh-60px)] items-center justify-center px-4 pt-[60px]">
-      <div className="w-full max-w-[480px] rounded-2xl border border-white/10 bg-white/5 p-10 text-center backdrop-blur-xl">
-        <h1 className="mb-2 text-[22px] font-bold text-slate-100">Upload Research Paper</h1>
-        <p className="mb-8 text-sm text-slate-400">
+      <div
+        className="w-full max-w-[480px] rounded-2xl border bg-[color:var(--glass-bg)] p-10 text-center backdrop-blur-xl"
+        style={{ borderColor: "var(--glass-border)" }}
+      >
+        <h1
+          className="mb-2 text-[22px] font-bold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Upload Research Paper
+        </h1>
+        <p className="mb-8 text-sm" style={{ color: "var(--text-secondary)" }}>
           PDF files only · Max semantic analysis in seconds
         </p>
 
@@ -85,17 +96,38 @@ function UploadPaper({ onUploadSuccess }) {
           onDrop={handleDrop}
           className={`rounded-xl border-2 border-dashed p-10 text-center ${
             isDragOver
-              ? "border-[#6366f1] bg-[rgba(99,102,241,0.1)]"
-              : "border-[rgba(99,102,241,0.4)] bg-[rgba(99,102,241,0.05)]"
+              ? "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]"
+              : "bg-[color-mix(in_srgb,var(--accent)_5%,transparent)]"
           }`}
+          style={{
+            borderColor: isDragOver
+              ? "var(--accent)"
+              : "color-mix(in srgb, var(--accent) 40%, transparent)",
+          }}
         >
-          <p className="text-5xl">📄</p>
-          <p className="mt-3 text-base font-medium text-slate-100">Drop your PDF here</p>
-          <p className="mt-1 text-sm text-slate-400">or</p>
+          <div
+            className="flex justify-center"
+            style={{ color: "var(--accent)" }}
+          >
+            <Upload size={48} />
+          </div>
+          <p
+            className="mt-3 text-base font-medium"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Drop your PDF here
+          </p>
+          <p
+            className="mt-1 text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            or
+          </p>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="mt-2 bg-transparent text-sm text-indigo-400 underline"
+            className="mt-2 bg-transparent text-sm underline"
+            style={{ color: "var(--accent)" }}
           >
             Browse Files
           </button>
@@ -109,26 +141,49 @@ function UploadPaper({ onUploadSuccess }) {
         </div>
 
         {file ? (
-          <div className="mt-4 inline-flex rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100 backdrop-blur-xl">
-            📄 {file.name} · {formatFileSize(file.size)}
+          <div
+            className="mt-4 inline-flex items-center gap-2 rounded-2xl border bg-[color:var(--glass-bg)] px-4 py-2 text-sm backdrop-blur-xl"
+            style={{
+              color: "var(--text-primary)",
+              borderColor: "var(--glass-border)",
+            }}
+          >
+            <FileText size={16} /> {file.name} · {formatFileSize(file.size)}
           </div>
         ) : null}
 
         {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
 
         {isUploading ? (
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-300">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-indigo-400" />
+          <div
+            className="mt-4 flex items-center justify-center gap-2 text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <span
+              className="h-4 w-4 animate-spin rounded-full border-2 border-white/30"
+              style={{ borderTopColor: "var(--accent)" }}
+            />
             <span>Indexing paper…</span>
           </div>
         ) : null}
 
         {paperId ? (
-          <div className="mt-5 flex flex-col items-center justify-center text-indigo-400">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500/20 text-lg font-bold">
-              ✓
+          <div
+            className="mt-5 flex flex-col items-center justify-center"
+            style={{ color: "var(--accent)" }}
+          >
+            <span
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--accent) 20%, transparent)",
+              }}
+            >
+              <CheckCircle size={24} />
             </span>
-            <p className="mt-2 text-sm font-semibold">Ready! {chunkCount} chunks indexed</p>
+            <p className="mt-2 text-sm font-semibold">
+              Ready! {chunkCount} chunks indexed
+            </p>
           </div>
         ) : null}
 
@@ -136,7 +191,11 @@ function UploadPaper({ onUploadSuccess }) {
           type="button"
           onClick={handleUpload}
           disabled={!file || isUploading}
-          className="mt-6 w-full rounded-xl bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          style={{
+            backgroundImage:
+              "linear-gradient(135deg, var(--accent), var(--accent-secondary))",
+          }}
         >
           {isUploading ? "Indexing paper…" : "Upload Paper"}
         </button>

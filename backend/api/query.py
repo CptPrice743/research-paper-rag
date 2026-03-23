@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from services.embedding_service import embed_query
 from services.llm_service import build_prompt, extract_sources, generate_answer
-from services.usage_limiter import check_and_increment, get_daily_count
+from services.usage_limiter import add_tokens, check_and_increment, get_daily_count
 from vectorstore.faiss_store import search
 
 router = APIRouter(prefix="/query", tags=["query"])
@@ -36,17 +36,25 @@ def query_papers(payload: QueryRequest, request: Request):
 		)
 
 	q_embedding = embed_query(payload.question)
-	chunks = search(payload.paper_id, q_embedding, top_k=7)
+	chunks = search(payload.paper_id, q_embedding, top_k=5)
 	messages = build_prompt(chunks, payload.question)
 	result = generate_answer(messages)
 	sources = extract_sources(chunks)
+	tokens_used = int(result["tokens_used"])
+	total_tokens_today = add_tokens(tokens_used)
+	token_budget = 500000
 
 	return {
 		"answer": result["answer"],
 		"sources": sources,
 		"meta": {
-			"tokens_used": result["tokens_used"],
+			"tokens_used": tokens_used,
 			"retrieved_chunks": len(chunks),
 			"daily_query_count": get_daily_count(),
+			"total_tokens_today": total_tokens_today,
+			"token_budget": token_budget,
+			"token_percentage": min(
+				100, round((total_tokens_today / token_budget) * 100, 1)
+			),
 		},
 	}

@@ -18,7 +18,12 @@ def _seconds_until_next_utc_midnight_with_buffer(buffer_seconds: int = 10) -> in
 	return max(1, int((next_midnight - now).total_seconds()) + buffer_seconds)
 
 
-_memory_usage = {"date": _today_utc_str(), "count": 0}
+_memory_usage = {
+	"date": _today_utc_str(),
+	"count": 0,
+	"token_date": _today_utc_str(),
+	"tokens": 0,
+}
 
 
 def _memory_reset_if_needed() -> None:
@@ -90,6 +95,35 @@ def get_daily_count() -> int:
 	if _redis_client is not None:
 		return _redis_get_daily_count()
 	return _memory_get_daily_count()
+
+
+def add_tokens(tokens: int) -> int:
+	"""Add tokens to today's usage. Returns new total."""
+	if _redis_client is not None:
+		key = f"paperpilot:tokens:{_today_utc_str()}"
+		total = int(_redis_client.incr(key, tokens))
+		if total == tokens:
+			_redis_client.expire(key, _seconds_until_next_utc_midnight_with_buffer())
+		return total
+
+	if _memory_usage.get("token_date") != _today_utc_str():
+		_memory_usage["token_date"] = _today_utc_str()
+		_memory_usage["tokens"] = 0
+
+	_memory_usage["tokens"] = _memory_usage.get("tokens", 0) + tokens
+	return int(_memory_usage["tokens"])
+
+
+def get_tokens_today() -> int:
+	"""Get total tokens used today."""
+	if _redis_client is not None:
+		key = f"paperpilot:tokens:{_today_utc_str()}"
+		val = _redis_client.get(key)
+		return int(val) if val else 0
+
+	if _memory_usage.get("token_date") != _today_utc_str():
+		return 0
+	return int(_memory_usage.get("tokens", 0))
 
 
 if settings.REDIS_URL.strip():
